@@ -166,7 +166,7 @@ func sendText(place Place, phone string, w http.ResponseWriter, r *http.Request)
 	} else {
 		params.Body = fmt.Sprintf("I'm now at %f, %f.", place.Location.Lat, place.Location.Lon)
 	}
-	_, _, err = c.Messages.Send("+15555555555", phone, params)
+	_, _, err = c.Messages.Send(twilioPhone, phone, params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
