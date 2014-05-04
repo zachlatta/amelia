@@ -10,11 +10,11 @@ import (
 
 type User struct {
 	AuthorizedWithMoves bool
-	MovesUserId int64
-	AccessToken string
-	RefreshToken string
-	Name string `datastore:"-"`
-	PhoneEntries []PhoneEntry `datastore:"-"`
+	MovesUserId         int64
+	AccessToken         string
+	RefreshToken        string
+	Name                string       `datastore:"-"`
+	PhoneEntries        []PhoneEntry `datastore:"-"`
 }
 
 func login(w http.ResponseWriter, r *http.Request) {

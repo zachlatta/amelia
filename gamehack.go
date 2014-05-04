@@ -35,7 +35,7 @@ type Place struct {
 }
 
 type Segment struct {
-	Place Place `json:"place"`
+	Place      Place  `json:"place"`
 	LastUpdate string `json:"lastUpdate"`
 }
 
@@ -83,7 +83,6 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hasDataUpload {
-
 	}
 	/*fmt.Fprintf(w, "%v", notification)
 	if err != nil {

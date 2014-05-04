@@ -66,7 +66,7 @@ func phone(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusUnauthorized)
 		return
 	}
-	userInfo := User {
+	userInfo := User{
 		Name: u.String(),
 	}
 	_, err := datastore.NewQuery("PhoneEntry").Ancestor(datastore.NewKey(c, "User", u.ID, 0, nil)).GetAll(c, &userInfo.PhoneEntries)
