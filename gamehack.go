@@ -3,6 +3,7 @@ package gamehack
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 
@@ -10,7 +11,9 @@ import (
 	"github.com/subosito/twilio"
 
 	"appengine"
+	"appengine/datastore"
 	"appengine/urlfetch"
+	"appengine/user"
 )
 
 type Notification struct {
@@ -35,6 +38,16 @@ type Place struct {
 	Location Location `json:"location"`
 }
 
+type UserInfo struct {
+	User string
+	PhoneEntries []PhoneEntry
+}
+
+type PhoneEntry struct {
+	Child string
+	Phone string
+}
+
 var oauthCfg = &oauth.Config{
 	ClientId:     clientId,
 	ClientSecret: clientSecret,
@@ -45,6 +58,12 @@ var oauthCfg = &oauth.Config{
 }
 
 func init() {
+	http.HandleFunc("/", root)
+	http.HandleFunc("/login", login)
+	http.HandleFunc("/logout", logout)
+	http.HandleFunc("/phone", phone)
+	http.HandleFunc("/addphone", addPhone)
+	http.HandleFunc("/delphone", delPhone)
 	http.HandleFunc("/authorize", authorize)
 	http.HandleFunc("/oauth2callback", oauthCallback)
 	http.HandleFunc("/notification", handleNotification)
@@ -148,4 +167,140 @@ func sendText(place Place, phone string, w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
+}
+
+func root(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, homePage)
+}
+
+const homePage = `
+<!doctype html>
+<html>
+  <head>
+    <title>Game+Hack</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+  </head>
+  <body>
+    <form action="/login" method="post">
+      <div><input type="submit" value="Sign In"></div>
+    </form>
+  </body>
+</html>
+`
+
+func login(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	u := user.Current(c)
+	if u == nil {
+		url, err := user.LoginURL(c, r.URL.String())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Location", url)
+		w.WriteHeader(http.StatusFound)
+		return
+	}
+	http.Redirect(w, r, "/phone", http.StatusFound)
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	u := user.Current(c)
+	if u != nil {
+		url, err := user.LogoutURL(c, "/")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Location", url)
+		w.WriteHeader(http.StatusFound)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+var phoneTemplate = template.Must(template.New("phone").Parse(`
+<!doctype html>
+<html>
+  <head>
+    <title>Game+Hack</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+  </head>
+  <body>
+    <p>Hello, {{.User}}! <a href="/logout">Sign Out</a></p>
+    <form action="/addphone" method="post">
+      <div>Child: <input type="text" name="child"/></div>
+      <div>Phone: <input type="text" name="phone"/></div>
+      <div><input type="submit" value="Add Phone Number"></div>
+    </form>
+    <form action="/delphone" method="post">
+      <select name="child">
+        <option value=""></option>
+        {{range .PhoneEntries}}
+          <option value="{{.Child}}">{{.Child}}</option>
+        {{end}}
+      </select>
+      <div><input type="submit" value="Remove Phone Number"></div>
+    </form>
+    {{range .PhoneEntries}}
+      <p><b>{{.Child}}</b>: {{.Phone}}</p>
+    {{end}}
+  </body>
+</html>
+`))
+
+func phone(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	u := user.Current(c)
+	if u == nil {
+		http.Error(w, "Not logged in", http.StatusInternalServerError)
+		return
+	}
+	userInfo := UserInfo {
+		User: u.Email,
+	}
+	_, err := datastore.NewQuery("PhoneEntry").Ancestor(datastore.NewKey(c, "User", u.ID, 0, nil)).GetAll(c, &userInfo.PhoneEntries)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = phoneTemplate.Execute(w, &userInfo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func addPhone(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	u := user.Current(c)
+	if u == nil {
+		http.Error(w, "Not logged in", http.StatusInternalServerError)
+		return
+	}
+	_, err := datastore.Put(c, datastore.NewKey(c, "PhoneEntry", r.FormValue("child"), 0, datastore.NewKey(c, "User", u.ID, 0, nil)), &PhoneEntry {
+		Child: r.FormValue("child"),
+		Phone: r.FormValue("phone"),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/phone", http.StatusFound)
+}
+
+func delPhone(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	u := user.Current(c)
+	if u == nil {
+		http.Error(w, "Not logged in", http.StatusInternalServerError)
+		return
+	}
+	err := datastore.Delete(c, datastore.NewKey(c, "PhoneEntry", r.FormValue("child"), 0, datastore.NewKey(c, "User", u.ID, 0, nil)))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/phone", http.StatusFound)
 }
