@@ -3,38 +3,42 @@ package gamehack
 import (
 	"net/http"
 
-	"code.google.com/p/goauth2/oauth"
-
 	"appengine"
-	"appengine/urlfetch"
+	"appengine/datastore"
+	"appengine/user"
 )
 
-var oauthCfg = &oauth.Config{
-	ClientId:     clientId,
-	ClientSecret: clientSecret,
-	AuthURL:      "https://api.moves-app.com/oauth/v1/authorize",
-	TokenURL:     "https://api.moves-app.com/oauth/v1/access_token",
-	RedirectURL:  "http://localhost:8080/oauth2callback",
-	Scope:        "location",
-}
-
 func authorize(w http.ResponseWriter, r *http.Request) {
-	url := oauthCfg.AuthCodeURL("")
+	c := appengine.NewContext(r)
+	u := user.Current(c)
+	if u == nil {
+		http.Redirect(w, r, "/", http.StatusUnauthorized)
+		return
+	}
+
+	url := oauthCfg.AuthCodeURL(u.ID)
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
 func oauthCallback(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
+	u := user.Current(c)
 
 	code := r.FormValue("code")
+	userId := r.FormValue("state")
 
-	t := &oauth.Transport{
-		Config: oauthCfg,
-		Transport: &urlfetch.Transport{
-			Context:                       c,
-			Deadline:                      0,
-			AllowInvalidServerCertificate: false,
-		},
+	t := CreateTransport(c, nil)
+
+	user := User{
+		Name: u.String(),
+	}
+	userKey := datastore.NewKey(c, "User", userId, 0, nil)
+
+	err := datastore.Get(c, userKey, &user)
+	if err != nil {
+		c.Errorf(err.Error())
+		http.Error(w, "User does not exist.", http.StatusNotFound)
+		return
 	}
 
 	token, err := t.Exchange(code)
@@ -44,17 +48,23 @@ func oauthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenCache := cache{
-		Context: c,
-		Key:     "Oauth",
-	}
+	user.MovesToken = *NewMonkeyToken(token)
+	user.AuthorizedWithMoves = true
 
-	err = tokenCache.PutToken(token)
+	profile, err := GetUserProfile(t)
 	if err != nil {
 		c.Errorf(err.Error())
+		http.Error(w, "Error fetching user profile from Moves.",
+			http.StatusInternalServerError)
 	}
 
-	t.Token = token
+	user.MovesUserId = profile.UserId
 
-	w.Write([]byte("Authorization flow complete."))
+	_, err = datastore.Put(c, userKey, &user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/phone", http.StatusOK)
 }

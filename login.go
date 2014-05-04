@@ -10,9 +10,8 @@ import (
 
 type User struct {
 	AuthorizedWithMoves bool
+	MovesToken          MonkeyToken
 	MovesUserId         int64
-	AccessToken         string
-	RefreshToken        string
 	Name                string       `datastore:"-"`
 	PhoneEntries        []PhoneEntry `datastore:"-"`
 }
