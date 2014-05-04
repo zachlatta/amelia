@@ -2,7 +2,6 @@ package gamehack
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -41,9 +40,20 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, "%v", notification)
+	hasDataUpload := false
+	for _, update := range notification.StorylineUpdates {
+		if update.Reason == "DataUpload" {
+			hasDataUpload = true
+			break
+		}
+	}
+
+	if hasDataUpload {
+
+	}
+	/*fmt.Fprintf(w, "%v", notification)
 	if err != nil {
 		http.Error(w, "Error writing response body.", http.StatusInternalServerError)
 		return
-	}
+	}*/
 }
