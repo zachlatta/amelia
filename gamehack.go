@@ -153,7 +153,7 @@ func sendText(place Place, phone string, w http.ResponseWriter, r *http.Request)
 	f := urlfetch.Client(a)
 	c := twilio.NewClient(twilioSid, twilioAuthToken, f)
 
-	c2 := tomtom.NewClient(tomtomKey, nil)
+	c2 := tomtom.NewClient(tomtomKey, f)
 	codes, err := c2.Geocode.ReverseGeocode(place.Location.Lat, place.Location.Lon)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
