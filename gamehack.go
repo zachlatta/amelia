@@ -101,10 +101,10 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 }
 
 // TODO: this function is untested
-func updateDailySegments(dailySegmentsList []DailySegments, userID string, w http.ResponseWriter, r *http.Request) {
+func updateDailySegments(dailySegmentsList []DailySegments, userKey *datastore.Key, w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	var phoneEntries []PhoneEntry
-	_, err := datastore.NewQuery("PhoneEntry").Ancestor(datastore.NewKey(c, "User", userID, 0, nil)).GetAll(c, &phoneEntries)
+	_, err := datastore.NewQuery("PhoneEntry").Ancestor(userKey).GetAll(c, &phoneEntries)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
