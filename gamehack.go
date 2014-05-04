@@ -194,7 +194,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if u == nil {
 		url, err := user.LoginURL(c, r.URL.String())
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Redirect(w, r, "/", http.StatusUnauthorized)
 			return
 		}
 		w.Header().Set("Location", url)
@@ -229,12 +229,12 @@ var phoneTemplate = template.Must(template.New("phone").Parse(`
   </head>
   <body>
     <p>Hello, {{.User}}! <a href="/logout">Sign Out</a></p>
-    <form action="/addphone" method="post">
+    <form action="/addphone" method="POST">
       <div>Parent: <input type="text" name="parent"/></div>
       <div>Phone: <input type="text" name="phone"/></div>
       <div><input type="submit" value="Add Phone Number"></div>
     </form>
-    <form action="/delphone" method="post">
+    <form action="/delphone" method="POST">
       <select name="parent">
         <option value=""></option>
         {{range .PhoneEntries}}
@@ -254,7 +254,7 @@ func phone(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
 	if u == nil {
-		http.Error(w, "Not logged in", http.StatusInternalServerError)
+		http.Redirect(w, r, "/", http.StatusUnauthorized)
 		return
 	}
 	userInfo := UserInfo{
@@ -276,7 +276,7 @@ func addPhone(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
 	if u == nil {
-		http.Error(w, "Not logged in", http.StatusInternalServerError)
+		http.Redirect(w, r, "/", http.StatusUnauthorized)
 		return
 	}
 	_, err := datastore.Put(c, datastore.NewKey(c, "PhoneEntry", r.FormValue("parent"), 0, datastore.NewKey(c, "User", u.ID, 0, nil)), &PhoneEntry{
@@ -294,7 +294,7 @@ func delPhone(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
 	if u == nil {
-		http.Error(w, "Not logged in", http.StatusInternalServerError)
+		http.Redirect(w, r, "/", http.StatusUnauthorized)
 		return
 	}
 	err := datastore.Delete(c, datastore.NewKey(c, "PhoneEntry", r.FormValue("parent"), 0, datastore.NewKey(c, "User", u.ID, 0, nil)))
