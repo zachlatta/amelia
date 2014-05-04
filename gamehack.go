@@ -35,14 +35,9 @@ type Place struct {
 	Location Location `json:"location"`
 }
 
-var (
-	AccountSid = "AccountSid goes here"
-	AuthToken  = "AuthToken goes here"
-)
-
 var oauthCfg = &oauth.Config{
-	ClientId:     "clientId",
-	ClientSecret: "clientSecret",
+	ClientId:     clientId,
+	ClientSecret: clientSecret,
 	AuthURL:      "https://api.moves-app.com/oauth/v1/authorize",
 	TokenURL:     "https://api.moves-app.com/oauth/v1/access_token",
 	RedirectURL:  "http://localhost:8080/oauth2callback",
@@ -79,6 +74,16 @@ func oauthCallback(w http.ResponseWriter, r *http.Request) {
 		c.Errorf(err.Error())
 		http.Error(w, "Internal server error.", http.StatusInternalServerError)
 		return
+	}
+
+	tokenCache := cache{
+		Context: c,
+		Key:     "Oauth",
+	}
+
+	err = tokenCache.PutToken(token)
+	if err != nil {
+		c.Errorf(err.Error())
 	}
 
 	t.Token = token
@@ -132,15 +137,10 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 }
 
 func sendText(place Place, phone string, w http.ResponseWriter, r *http.Request) {
-	// Initialize twilio client
-	//c := twilio.NewClient(AccountSid, AuthToken, nil)
-
-	// You can set custom Client, eg: you're using `appengine/urlfetch` on Google's appengine
-	a := appengine.NewContext(r) // r is a *http.Request
+	a := appengine.NewContext(r)
 	f := urlfetch.Client(a)
-	c := twilio.NewClient(AccountSid, AuthToken, f)
+	c := twilio.NewClient(twilioSid, twilioAuthToken, f)
 
-	// Send Message
 	params := twilio.MessageParams{
 		Body: fmt.Sprintf("Your child is now at lat %f lon %f", place.Location.Lat, place.Location.Lon),
 	}
