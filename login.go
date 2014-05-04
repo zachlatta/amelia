@@ -13,6 +13,7 @@ type User struct {
 	MovesUserId         int64
 	AccessToken         string
 	RefreshToken        string
+	LastUpdate          string
 	Name                string       `datastore:"-"`
 	PhoneEntries        []PhoneEntry `datastore:"-"`
 }
