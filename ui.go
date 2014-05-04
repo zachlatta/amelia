@@ -94,7 +94,9 @@ var phoneTemplate = template.Must(template.New("phone").Parse(`
 		<div class="container">
     <p>Hello, {{.Name}}! </p>
 		{{if .AuthorizedWithMoves}}
-		<p>Account is currently authorized with Moves.</p>
+		<div class="well">
+			<p>Account is currently authorized with Moves.</p>
+		</div>
 		{{else}}
 		<p><a href="/authorize" class="btn btn-default">Authenticate With Moves</a></p>
 		{{end}}
