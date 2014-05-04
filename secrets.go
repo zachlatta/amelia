@@ -5,5 +5,5 @@ const (
 	clientSecret    = ""
 	twilioSid       = ""
 	twilioAuthToken = ""
-	tomtomAPIKey    = ""
+	tomtomKey       = ""
 )
