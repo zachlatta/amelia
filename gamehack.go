@@ -34,6 +34,15 @@ type Place struct {
 	Location Location `json:"location"`
 }
 
+type Segment struct {
+	Place Place `json:"place"`
+	LastUpdate string `json:"lastUpdate"`
+}
+
+type DailySegments struct {
+	Segments []Segment `json:"segments"`
+}
+
 func init() {
 	http.HandleFunc("/", root)
 	http.HandleFunc("/login", login)
