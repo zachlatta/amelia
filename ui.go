@@ -38,6 +38,11 @@ var phoneTemplate = template.Must(template.New("phone").Parse(`
   </head>
   <body>
     <p>Hello, {{.Name}}! <a href="/logout">Sign Out</a></p>
+		{{if .AuthorizedWithMoves}}
+		<p>Account is currently authorized with Moves.</p>
+		{{else}}
+		<p><a href="/authorize">Authenticate With Moves</a></p>
+		{{end}}
     <form action="/addphone" method="POST">
       <div>Parent: <input type="text" name="parent"/></div>
       <div>Phone: <input type="text" name="phone"/></div>
@@ -69,7 +74,16 @@ func phone(w http.ResponseWriter, r *http.Request) {
 	user := User{
 		Name: u.String(),
 	}
-	_, err := datastore.NewQuery("PhoneEntry").Ancestor(datastore.NewKey(c, "User", u.ID, 0, nil)).GetAll(c, &user.PhoneEntries)
+
+	userKey := datastore.NewKey(c, "User", u.ID, 0, nil)
+
+	err := datastore.Get(c, userKey, &user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = datastore.NewQuery("PhoneEntry").Ancestor(userKey).GetAll(c, &user.PhoneEntries)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
