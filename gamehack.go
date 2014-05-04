@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/subosito/twilio"
+	"github.com/zachlatta/go-tomtom"
 
 	"appengine"
 	"appengine/datastore"
@@ -128,7 +129,6 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 	sendText(place, "+15555555555", w, r)*/
 }
 
-// TODO: this function is untested
 func updateDailySegments(dailySegmentsList []DailySegments, userKey *datastore.Key, w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	var phoneEntries []PhoneEntry
@@ -153,10 +153,20 @@ func sendText(place Place, phone string, w http.ResponseWriter, r *http.Request)
 	f := urlfetch.Client(a)
 	c := twilio.NewClient(twilioSid, twilioAuthToken, f)
 
-	params := twilio.MessageParams{
-		Body: fmt.Sprintf("Your child is now at lat %f lon %f", place.Location.Lat, place.Location.Lon),
+	c2 := tomtom.NewClient(tomtomKey, nil)
+	codes, err := c2.Geocode.ReverseGeocode(place.Location.Lat, place.Location.Lon)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	_, _, err := c.Messages.Send("+15555555555", phone, params)
+
+	var params twilio.MessageParams
+	if len(codes) > 0 {
+		params.Body = fmt.Sprintf("I'm now at %s.", codes[0].FormattedAddress)
+	} else {
+		params.Body = fmt.Sprintf("I'm now at %f, %f.", place.Location.Lat, place.Location.Lon)
+	}
+	_, _, err = c.Messages.Send("+15555555555", phone, params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
