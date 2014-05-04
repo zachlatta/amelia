@@ -38,9 +38,13 @@ type Place struct {
 	Location Location `json:"location"`
 }
 
-type UserInfo struct {
-	User         string
-	PhoneEntries []PhoneEntry
+type User struct {
+	AuthorizedWithMoves bool
+	MovesUserId int64
+	AccessToken string
+	RefreshToken string
+	Name string `datastore:"-"`
+	PhoneEntries []PhoneEntry `datastore:"-"`
 }
 
 type PhoneEntry struct {
@@ -192,6 +196,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
 	if u == nil {
+		// show sign in screen
 		url, err := user.LoginURL(c, r.URL.String())
 		if err != nil {
 			http.Redirect(w, r, "/", http.StatusUnauthorized)
@@ -200,6 +205,16 @@ func login(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Location", url)
 		w.WriteHeader(http.StatusFound)
 		return
+	}
+	// if this user isn't in database, add it
+	var user User
+	err := datastore.Get(c, datastore.NewKey(c, "User", u.ID, 0, nil), &user)
+	if err == datastore.ErrNoSuchEntity {
+		_, err = datastore.Put(c, datastore.NewKey(c, "User", u.ID, 0, nil), &User{})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	http.Redirect(w, r, "/phone", http.StatusFound)
 }
@@ -228,7 +243,7 @@ var phoneTemplate = template.Must(template.New("phone").Parse(`
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
   </head>
   <body>
-    <p>Hello, {{.User}}! <a href="/logout">Sign Out</a></p>
+    <p>Hello, {{.Name}}! <a href="/logout">Sign Out</a></p>
     <form action="/addphone" method="POST">
       <div>Parent: <input type="text" name="parent"/></div>
       <div>Phone: <input type="text" name="phone"/></div>
@@ -257,8 +272,8 @@ func phone(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusUnauthorized)
 		return
 	}
-	userInfo := UserInfo{
-		User: u.Email,
+	userInfo := User {
+		Name: u.String(),
 	}
 	_, err := datastore.NewQuery("PhoneEntry").Ancestor(datastore.NewKey(c, "User", u.ID, 0, nil)).GetAll(c, &userInfo.PhoneEntries)
 	if err != nil {
