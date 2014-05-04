@@ -57,5 +57,26 @@ func GetUserProfile(t *oauth.Transport) (*UserProfile, error) {
 		return nil, err
 	}
 
-	return profile, err
+	return profile, nil
+}
+
+func GetLatestPlaces(t *oauth.Transport) (*[]DailySegments, error) {
+	resp, err := t.Client().Get(baseURL + "/user/places/daily?pastDays=1")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var dailySegments []DailySegments
+	err = json.Unmarshal(bytes, &dailySegments)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dailySegments, nil
 }

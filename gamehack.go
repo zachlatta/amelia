@@ -57,6 +57,8 @@ func init() {
 }
 
 func handleNotification(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+
 	if r.Method != "POST" {
 		http.Error(w, "Invalid method.", http.StatusMethodNotAllowed)
 		return
@@ -84,6 +86,32 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hasDataUpload {
+		q := datastore.NewQuery("User").Filter("MovesUserId =", notification.UserID)
+
+		var users []User
+		keys, err := q.GetAll(c, &users)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if len(users) <= 0 {
+			http.Error(w, "wtf moves", http.StatusNotFound)
+			return
+		}
+
+		user, key := users[0], keys[0]
+
+		t := CreateTransport(c, user.MovesToken.NormToken())
+
+		dailySegmentsList, err := GetLatestPlaces(t)
+		if err != nil {
+			c.Errorf(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		updateDailySegments(*dailySegmentsList, key, w, r)
 	}
 	/*fmt.Fprintf(w, "%v", notification)
 	if err != nil {
