@@ -39,13 +39,13 @@ type Place struct {
 }
 
 type UserInfo struct {
-	User string
+	User         string
 	PhoneEntries []PhoneEntry
 }
 
 type PhoneEntry struct {
-	Child string
-	Phone string
+	Parent string
+	Phone  string
 }
 
 var oauthCfg = &oauth.Config{
@@ -230,21 +230,21 @@ var phoneTemplate = template.Must(template.New("phone").Parse(`
   <body>
     <p>Hello, {{.User}}! <a href="/logout">Sign Out</a></p>
     <form action="/addphone" method="post">
-      <div>Child: <input type="text" name="child"/></div>
+      <div>Parent: <input type="text" name="parent"/></div>
       <div>Phone: <input type="text" name="phone"/></div>
       <div><input type="submit" value="Add Phone Number"></div>
     </form>
     <form action="/delphone" method="post">
-      <select name="child">
+      <select name="parent">
         <option value=""></option>
         {{range .PhoneEntries}}
-          <option value="{{.Child}}">{{.Child}}</option>
+          <option value="{{.Parent}}">{{.Parent}}</option>
         {{end}}
       </select>
       <div><input type="submit" value="Remove Phone Number"></div>
     </form>
     {{range .PhoneEntries}}
-      <p><b>{{.Child}}</b>: {{.Phone}}</p>
+      <p><b>{{.Parent}}</b>: {{.Phone}}</p>
     {{end}}
   </body>
 </html>
@@ -257,7 +257,7 @@ func phone(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not logged in", http.StatusInternalServerError)
 		return
 	}
-	userInfo := UserInfo {
+	userInfo := UserInfo{
 		User: u.Email,
 	}
 	_, err := datastore.NewQuery("PhoneEntry").Ancestor(datastore.NewKey(c, "User", u.ID, 0, nil)).GetAll(c, &userInfo.PhoneEntries)
@@ -279,9 +279,9 @@ func addPhone(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not logged in", http.StatusInternalServerError)
 		return
 	}
-	_, err := datastore.Put(c, datastore.NewKey(c, "PhoneEntry", r.FormValue("child"), 0, datastore.NewKey(c, "User", u.ID, 0, nil)), &PhoneEntry {
-		Child: r.FormValue("child"),
-		Phone: r.FormValue("phone"),
+	_, err := datastore.Put(c, datastore.NewKey(c, "PhoneEntry", r.FormValue("parent"), 0, datastore.NewKey(c, "User", u.ID, 0, nil)), &PhoneEntry{
+		Parent: r.FormValue("parent"),
+		Phone:  r.FormValue("phone"),
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -297,7 +297,7 @@ func delPhone(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not logged in", http.StatusInternalServerError)
 		return
 	}
-	err := datastore.Delete(c, datastore.NewKey(c, "PhoneEntry", r.FormValue("child"), 0, datastore.NewKey(c, "User", u.ID, 0, nil)))
+	err := datastore.Delete(c, datastore.NewKey(c, "PhoneEntry", r.FormValue("parent"), 0, datastore.NewKey(c, "User", u.ID, 0, nil)))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
