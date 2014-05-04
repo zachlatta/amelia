@@ -11,8 +11,6 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"appengine/urlfetch"
-
-	"time"
 )
 
 type Notification struct {
@@ -105,50 +103,20 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 // TODO: this function is untested
 func updateDailySegments(dailySegmentsList []DailySegments, userID string, w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
-	// get last update time from database
-	var user User
-	userKey := datastore.NewKey(c, "User", userID, 0, nil)
-	err := datastore.Get(c, userKey, &user)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	lastUpdate, err := time.Parse(time.RFC3339Nano, user.LastUpdate)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	// get phone numbers from database
 	var phoneEntries []PhoneEntry
-	_, err = datastore.NewQuery("PhoneEntry").Ancestor(datastore.NewKey(c, "User", userID, 0, nil)).GetAll(c, &phoneEntries)
+	_, err := datastore.NewQuery("PhoneEntry").Ancestor(datastore.NewKey(c, "User", userID, 0, nil)).GetAll(c, &phoneEntries)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	for _, dailySegments := range dailySegmentsList {
 		for _, segment := range dailySegments.Segments {
-			// send texts to user's phone numbers
 			for _, phone := range phoneEntries {
 				sendText(segment.Place, phone.Phone, w, r)
 			}
-			// update last update time
-			time, err := time.Parse(time.RFC3339Nano, segment.LastUpdate)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			if time.After(lastUpdate) {
-				lastUpdate = time
-			}
+			break // first item in slice is latest one
 		}
-	}
-	// set last update time in database
-	// TODO: this introduces a race condition setting LastUpdate if updateDailySegments() is called in close succession for the same user (may want to hold lock on database)
-	user.LastUpdate = lastUpdate.Format(time.RFC3339Nano)
-	_, err = datastore.Put(c, userKey, &user)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		break // first item in slice is latest one
 	}
 }
 

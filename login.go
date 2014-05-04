@@ -12,7 +12,6 @@ type User struct {
 	AuthorizedWithMoves bool
 	MovesToken          MonkeyToken
 	MovesUserId         int64
-	LastUpdate          string
 	Name                string       `datastore:"-"`
 	PhoneEntries        []PhoneEntry `datastore:"-"`
 }
