@@ -51,6 +51,7 @@ const homePage = `
 				</p>
 			</div>
 		</div>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js"></script>
   </body>
 </html>
@@ -127,6 +128,7 @@ var phoneTemplate = template.Must(template.New("phone").Parse(`
 			<button type="submit" class="btn btn-default">Remove Phone Number</button>
     </form>
 		</div>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
 		<script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js"></script>
   </body>
 </html>
