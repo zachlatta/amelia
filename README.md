@@ -3,6 +3,9 @@
 Amelia keeps track of your children when you aren't. Amelia sends you a text
 message every time your child changes location with their new address.
 
+Amelia was created during the [Burbank Game+Hack](http://burbankgamehack.com/)
+and won second place.
+
 ## Getting Started
 
 You must create a `secrets.go` file that contains configuration for Amelia in
