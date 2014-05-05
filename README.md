@@ -3,6 +3,24 @@
 Amelia keeps track of your children when you aren't. Amelia sends you a text
 message every time your child changes location with their new address.
 
+## Getting Started
+
+You must create a `secrets.go` file that contains configuration for Amelia in
+the home directory. Here's the contents of an example file:
+
+```
+package gamehack
+
+const (
+	clientId        = "moves_client_id"
+	clientSecret    = "moves_client_secret"
+	twilioSid       = "twilio_sid"
+	twilioAuthToken = "twilio_auth_token"
+	twilioPhone     = "twilio_phone_number (with country code) ex. +15554443333"
+	tomtomKey       = "tomtom_geocoding_api_key"
+)
+
+```
 ## License
 
 [tl;dr](https://tldrlegal.com/license/mit-license)
