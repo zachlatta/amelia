@@ -23,8 +23,14 @@ func authorize(w http.ResponseWriter, r *http.Request) {
 func oauthCallback(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 
+	httpErr := r.FormValue("error")
 	code := r.FormValue("code")
 	userId := r.FormValue("state")
+
+	if httpErr == "access_denied" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 
 	t := CreateTransport(c, nil)
 
