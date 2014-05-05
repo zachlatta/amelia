@@ -27,7 +27,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Location", url)
-		w.WriteHeader(http.StatusFound)
+		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
 	// if this user isn't in database, add it
@@ -40,7 +40,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
@@ -53,8 +53,8 @@ func logout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Location", url)
-		w.WriteHeader(http.StatusFound)
+		w.WriteHeader(http.StatusSeeOther)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

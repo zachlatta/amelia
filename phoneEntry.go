@@ -28,7 +28,7 @@ func addPhone(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/phone", http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func delPhone(w http.ResponseWriter, r *http.Request) {
@@ -43,5 +43,5 @@ func delPhone(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	http.Redirect(w, r, "/phone", http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

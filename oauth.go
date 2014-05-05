@@ -17,14 +17,20 @@ func authorize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := oauthCfg.AuthCodeURL(u.ID)
-	http.Redirect(w, r, url, http.StatusFound)
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 func oauthCallback(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 
+	httpErr := r.FormValue("error")
 	code := r.FormValue("code")
 	userId := r.FormValue("state")
+
+	if httpErr == "access_denied" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 
 	t := CreateTransport(c, nil)
 
@@ -63,5 +69,32 @@ func oauthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/phone", http.StatusOK)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func revoke(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	u := user.Current(c)
+	if u == nil {
+		http.Redirect(w, r, "/", http.StatusUnauthorized)
+		return
+	}
+
+	var user User
+	userKey := datastore.NewKey(c, "User", u.ID, 0, nil)
+	err := datastore.Get(c, userKey, &user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user.AuthorizedWithMoves = false
+
+	_, err = datastore.Put(c, userKey, &user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

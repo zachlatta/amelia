@@ -45,17 +45,6 @@ type DailySegments struct {
 	Segments []Segment `json:"segments"`
 }
 
-func init() {
-	http.HandleFunc("/", root)
-	http.HandleFunc("/login", login)
-	http.HandleFunc("/logout", logout)
-	http.HandleFunc("/addphone", addPhone)
-	http.HandleFunc("/delphone", delPhone)
-	http.HandleFunc("/authorize", authorize)
-	http.HandleFunc("/oauth2callback", oauthCallback)
-	http.HandleFunc("/notification", handleNotification)
-}
-
 func handleNotification(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 
@@ -86,7 +75,7 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hasDataUpload {
-		q := datastore.NewQuery("User").Filter("MovesUserId =", notification.UserID)
+		q := datastore.NewQuery("User").Filter("AuthorizedWithMoves =", true).Filter("MovesUserId =", notification.UserID)
 
 		var users []User
 		keys, err := q.GetAll(c, &users)
@@ -96,7 +85,7 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if len(users) <= 0 {
-			http.Error(w, "wtf moves", http.StatusNotFound)
+			http.Error(w, "User not found.", http.StatusNotFound)
 			return
 		}
 
@@ -113,19 +102,6 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 
 		updateDailySegments(*dailySegmentsList, key, w, r)
 	}
-	/*fmt.Fprintf(w, "%v", notification)
-	if err != nil {
-		http.Error(w, "Error writing response body.", http.StatusInternalServerError)
-		return
-	}*/
-	/*var place Place
-	err = json.Unmarshal(body, &place)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	sendText(place, "+15555555555", w, r)*/
 }
 
 func updateDailySegments(dailySegmentsList []DailySegments, userKey *datastore.Key, w http.ResponseWriter, r *http.Request) {
