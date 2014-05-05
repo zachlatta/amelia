@@ -4,5 +4,9 @@ runtime: go
 api_version: go1
 
 handlers:
+
+- url: /styles
+  static_dir: static/styles
+
 - url: /.*
   script: _go_app

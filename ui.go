@@ -16,7 +16,7 @@ const homePage = `
   <head>
     <title>Amelia</title>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-		<link rel="stylesheet" href="http://bootswatch.com/amelia/bootstrap.min.css">
+		<link rel="stylesheet" href="/styles/bootstrap.min.css">
   </head>
   <body>
 		<nav class="navbar navbar-default" role="navigation">
