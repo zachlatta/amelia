@@ -22,16 +22,13 @@ func authorize(w http.ResponseWriter, r *http.Request) {
 
 func oauthCallback(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
-	u := user.Current(c)
 
 	code := r.FormValue("code")
 	userId := r.FormValue("state")
 
 	t := CreateTransport(c, nil)
 
-	user := User{
-		Name: u.String(),
-	}
+	user := User{}
 	userKey := datastore.NewKey(c, "User", userId, 0, nil)
 
 	err := datastore.Get(c, userKey, &user)
