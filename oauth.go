@@ -65,3 +65,30 @@ func oauthCallback(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+func revoke(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	u := user.Current(c)
+	if u == nil {
+		http.Redirect(w, r, "/", http.StatusUnauthorized)
+		return
+	}
+
+	var user User
+	userKey := datastore.NewKey(c, "User", u.ID, 0, nil)
+	err := datastore.Get(c, userKey, &user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user.AuthorizedWithMoves = false
+
+	_, err = datastore.Put(c, userKey, &user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}

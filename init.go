@@ -12,5 +12,6 @@ func init() {
 	http.HandleFunc("/delphone", delPhone)
 	http.HandleFunc("/authorize", authorize)
 	http.HandleFunc("/oauth2callback", oauthCallback)
+	http.HandleFunc("/revoke", revoke)
 	http.HandleFunc("/notification", handleNotification)
 }

@@ -75,7 +75,7 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hasDataUpload {
-		q := datastore.NewQuery("User").Filter("MovesUserId =", notification.UserID)
+		q := datastore.NewQuery("User").Filter("AuthorizedWithMoves =", true).Filter("MovesUserId =", notification.UserID)
 
 		var users []User
 		keys, err := q.GetAll(c, &users)
@@ -85,7 +85,7 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if len(users) <= 0 {
-			http.Error(w, "wtf moves", http.StatusNotFound)
+			http.Error(w, "User not found.", http.StatusNotFound)
 			return
 		}
 
