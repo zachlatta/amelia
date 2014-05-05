@@ -14,21 +14,18 @@ const tD = "static/"
 
 var templates = template.Must(template.ParseFiles(
 	tD+"application.html",
-	tD+"index.html",
-	tD+"phone.html",
+	tD+"landing.html",
+	tD+"profile.html",
 ))
 
 func root(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "index", nil)
-}
-
-func phone(w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
 	if u == nil {
-		http.Redirect(w, r, "/", http.StatusUnauthorized)
+		renderTemplate(w, "landing", nil)
 		return
 	}
+
 	user := User{
 		Name: u.String(),
 	}
@@ -46,7 +43,7 @@ func phone(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	renderTemplate(w, "phone", user)
+	renderTemplate(w, "profile", user)
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, c interface{}) {

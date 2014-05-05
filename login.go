@@ -40,7 +40,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	http.Redirect(w, r, "/phone", http.StatusFound)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {

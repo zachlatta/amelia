@@ -49,7 +49,6 @@ func init() {
 	http.HandleFunc("/", root)
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/logout", logout)
-	http.HandleFunc("/phone", phone)
 	http.HandleFunc("/addphone", addPhone)
 	http.HandleFunc("/delphone", delPhone)
 	http.HandleFunc("/authorize", authorize)
