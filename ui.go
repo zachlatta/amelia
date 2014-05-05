@@ -1,7 +1,6 @@
 package gamehack
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 
@@ -9,6 +8,14 @@ import (
 	"appengine/datastore"
 	"appengine/user"
 )
+
+// Base directory where templates are stored.
+const tD = "static/"
+
+var templates = template.Must(template.ParseFiles(
+	tD+"index.html",
+	tD+"phone.html",
+))
 
 func root(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "index", nil)
@@ -42,12 +49,7 @@ func phone(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderTemplate(w http.ResponseWriter, tmpl string, c interface{}) {
-	t, err := template.ParseFiles(fmt.Sprintf("static/%s.html", tmpl))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	err = t.Execute(w, c)
+	err := templates.ExecuteTemplate(w, tmpl+".html", c)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
