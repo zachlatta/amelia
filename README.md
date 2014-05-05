@@ -9,7 +9,7 @@ You must create a `secrets.go` file that contains configuration for Amelia in
 the home directory. Here's the contents of an example file:
 
 ```
-package gamehack
+package amelia
 
 const (
 	clientId        = "moves_client_id"

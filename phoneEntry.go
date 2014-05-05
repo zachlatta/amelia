@@ -1,4 +1,4 @@
-package gamehack
+package amelia
 
 import (
 	"net/http"
