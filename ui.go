@@ -13,6 +13,7 @@ import (
 const tD = "static/"
 
 var templates = template.Must(template.ParseFiles(
+	tD+"application.html",
 	tD+"index.html",
 	tD+"phone.html",
 ))
