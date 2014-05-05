@@ -63,5 +63,5 @@ func oauthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/phone", http.StatusOK)
+	http.Redirect(w, r, "/", http.StatusOK)
 }
