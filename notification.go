@@ -22,7 +22,6 @@ type Notification struct {
 type StorylineUpdate struct {
 	// TODO: Change to equivalent of enum
 	Reason          string `json:"reason"`
-	LastSegmentType string `json:"lastSegmentType"`
 }
 
 type Location struct {
@@ -31,14 +30,11 @@ type Location struct {
 }
 
 type Place struct {
-	Id       int      `json:"id"`
-	Type     string   `json:"type"`
 	Location Location `json:"location"`
 }
 
 type Segment struct {
 	Place      Place  `json:"place"`
-	LastUpdate string `json:"lastUpdate"`
 }
 
 type DailySegments struct {
