@@ -113,19 +113,6 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 
 		updateDailySegments(*dailySegmentsList, key, w, r)
 	}
-	/*fmt.Fprintf(w, "%v", notification)
-	if err != nil {
-		http.Error(w, "Error writing response body.", http.StatusInternalServerError)
-		return
-	}*/
-	/*var place Place
-	err = json.Unmarshal(body, &place)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	sendText(place, "+15555555555", w, r)*/
 }
 
 func updateDailySegments(dailySegmentsList []DailySegments, userKey *datastore.Key, w http.ResponseWriter, r *http.Request) {
