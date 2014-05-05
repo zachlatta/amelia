@@ -17,7 +17,7 @@ func authorize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	url := oauthCfg.AuthCodeURL(u.ID)
-	http.Redirect(w, r, url, http.StatusFound)
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 func oauthCallback(w http.ResponseWriter, r *http.Request) {
@@ -63,5 +63,5 @@ func oauthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/", http.StatusOK)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
