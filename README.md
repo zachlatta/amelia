@@ -1,4 +1,4 @@
-# Amelia
+# Amelia ![Analytics](https://ga-beacon.appspot.com/UA-34529482-6/postman/readme?pixel)
 
 Amelia keeps track of your children when you aren't. Amelia sends you a text
 message every time your child changes location with their new address.
