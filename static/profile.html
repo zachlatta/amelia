@@ -22,18 +22,17 @@
 </nav>
 <div class="container">
   <p>Hello, {{.Name}}! </p>
+  <h2>Child Phone</h2>
   {{if .AuthorizedWithMoves}}
-  <div class="well">
-    Account is currently authorized with Moves. <a href="/revoke" class="btn btn-default">Revoke</a>
-  </div>
+  <p>Child phone is authorized with Moves. <a href="/revoke" class="btn btn-default">Revoke</a></p>
   {{else}}
   <p><a href="/authorize" class="btn btn-default">Authenticate With Moves</a></p>
   {{end}}
-  <h2>Phones</h2>
+  <h2>Parent Phones</h2>
   {{range .PhoneEntries}}
   <p><b>{{.Parent}}</b>: {{.Phone}}</p>
   {{end}}
-  <h3>Add Phone Number</h3>
+  <h3>Add Parent Phone</h3>
   <form action="/addphone" method="POST" role="form">
     <div class="form-group">
       <label for="parent">Parent</label>
@@ -43,9 +42,9 @@
       <label for="phone">Phone</label>
       <input type="text" class="form-control" id="phone" name="phone" placeholder="+15553332222">
     </div>
-    <button type="submit" class="btn btn-default">Add Phone Number</button>
+    <button type="submit" class="btn btn-default">Add Parent Phone</button>
   </form>
-  <h3>Remove Phone Number</h3>
+  <h3>Remove Parent Phone</h3>
   <form action="/delphone" method="POST">
     <div class="form-group">
       <select name="parent" class="form-control">
@@ -56,7 +55,7 @@
       </select>
     </div>
 
-    <button type="submit" class="btn btn-default">Remove Phone Number</button>
+    <button type="submit" class="btn btn-default">Remove Parent Phone</button>
   </form>
 </div>
 {{template "footer"}}
