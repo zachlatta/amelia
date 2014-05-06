@@ -1,4 +1,4 @@
-package gamehack
+package amelia
 
 import (
 	"net/http"
@@ -12,6 +12,7 @@ type User struct {
 	AuthorizedWithMoves bool
 	MovesToken          MonkeyToken
 	MovesUserId         int64
+	LastAddress         string
 	Name                string       `datastore:"-"`
 	PhoneEntries        []PhoneEntry `datastore:"-"`
 }

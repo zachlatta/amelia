@@ -49,7 +49,7 @@
   <form action="/delphone" method="POST">
     <div class="form-group">
       <select name="parent" class="form-control">
-        <option value=""></option>
+        <option value="">&nbsp;</option>
         {{range .PhoneEntries}}
         <option value="{{.Parent}}">{{.Parent}}</option>
         {{end}}

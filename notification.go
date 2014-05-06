@@ -1,4 +1,4 @@
-package gamehack
+package amelia
 
 import (
 	"encoding/json"
@@ -22,7 +22,6 @@ type Notification struct {
 type StorylineUpdate struct {
 	// TODO: Change to equivalent of enum
 	Reason          string `json:"reason"`
-	LastSegmentType string `json:"lastSegmentType"`
 }
 
 type Location struct {
@@ -31,14 +30,11 @@ type Location struct {
 }
 
 type Place struct {
-	Id       int      `json:"id"`
-	Type     string   `json:"type"`
 	Location Location `json:"location"`
 }
 
 type Segment struct {
 	Place      Place  `json:"place"`
-	LastUpdate string `json:"lastUpdate"`
 }
 
 type DailySegments struct {
@@ -100,12 +96,13 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		updateDailySegments(*dailySegmentsList, key, w, r)
+		updateDailySegments(*dailySegmentsList, user, key, w, r)
 	}
 }
 
-func updateDailySegments(dailySegmentsList []DailySegments, userKey *datastore.Key, w http.ResponseWriter, r *http.Request) {
+func updateDailySegments(dailySegmentsList []DailySegments, user User, userKey *datastore.Key, w http.ResponseWriter, r *http.Request) {
 	c := appengine.NewContext(r)
+	f := urlfetch.Client(c)
 	var phoneEntries []PhoneEntry
 	_, err := datastore.NewQuery("PhoneEntry").Ancestor(userKey).GetAll(c, &phoneEntries)
 	if err != nil {
@@ -114,34 +111,46 @@ func updateDailySegments(dailySegmentsList []DailySegments, userKey *datastore.K
 	}
 	for _, dailySegments := range dailySegmentsList {
 		for _, segment := range dailySegments.Segments {
-			for _, phone := range phoneEntries {
-				sendText(segment.Place, phone.Phone, w, r)
+			// use reverse geocoding to find address
+			client := tomtom.NewClient(tomtomKey, f)
+			codes, err := client.Geocode.ReverseGeocode(segment.Place.Location.Lat, segment.Place.Location.Lon)
+			if err != nil {
+				c.Errorf(err.Error())
 			}
-			break // first item in slice is latest one
+
+			// get address string and check if it changed
+			var address string
+			if err == nil && len(codes) > 0 {
+				address = codes[0].FormattedAddress
+			} else {
+				address = fmt.Sprintf("%f, %f", segment.Place.Location.Lat, segment.Place.Location.Lon)
+			}
+			if address == user.LastAddress {
+				return
+			}
+			user.LastAddress = address
+			_, err = datastore.Put(c, userKey, &user)
+			if err != nil {
+				c.Errorf(err.Error())
+			}
+
+			// send texts
+			for _, phone := range phoneEntries {
+				sendText("I'm now at " + address + ".", phone.Phone, w, r)
+			}
+			return // first item in slice is latest one
 		}
-		break // first item in slice is latest one
 	}
 }
 
-func sendText(place Place, phone string, w http.ResponseWriter, r *http.Request) {
+func sendText(message string, phone string, w http.ResponseWriter, r *http.Request) {
 	a := appengine.NewContext(r)
 	f := urlfetch.Client(a)
 	c := twilio.NewClient(twilioSid, twilioAuthToken, f)
 
-	c2 := tomtom.NewClient(tomtomKey, f)
-	codes, err := c2.Geocode.ReverseGeocode(place.Location.Lat, place.Location.Lon)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	var params twilio.MessageParams
-	if len(codes) > 0 {
-		params.Body = fmt.Sprintf("I'm now at %s.", codes[0].FormattedAddress)
-	} else {
-		params.Body = fmt.Sprintf("I'm now at %f, %f.", place.Location.Lat, place.Location.Lon)
-	}
-	_, _, err = c.Messages.Send(twilioPhone, phone, params)
+	params.Body = message
+	_, _, err := c.Messages.Send(twilioPhone, phone, params)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
