@@ -8,6 +8,12 @@ and won second place.
 
 ## Getting Started
 
+Amelia runs on Google App Engine. You must set up the App Engine Go SDK as
+documented
+[here](https://developers.google.com/appengine/docs/go/gettingstarted/devenvironment).
+
+### Configuration
+
 You must create a `secrets.go` file that contains configuration for Amelia in
 the home directory. Here's the contents of an example file:
 
@@ -22,8 +28,33 @@ const (
 	twilioPhone     = "twilio_phone_number (with country code) ex. +15554443333"
 	tomtomKey       = "tomtom_geocoding_api_key"
 )
-
 ```
+
+### Development
+
+Run the application in development mode with:
+
+    $ goapp serve
+
+### Deployment
+
+Before deploying, you must make the following adjustments:
+
+* Change the app's name in `app.yaml` to the name of your application on App
+  Engine.
+* Make sure you have the `RedirectURL` in `moves.go` set to your app's URL.
+* `secrets.go` must be created with valid values.
+
+Once you've made those changes, just run the following while in the root of
+your local repository:
+
+    $ goapp deploy
+
+If you have two-factor authentication configured on your account, you'll want
+to authenticate with OAuth:
+
+    $ goapp deploy -oauth
+
 ## License
 
 [tl;dr](https://tldrlegal.com/license/mit-license)
