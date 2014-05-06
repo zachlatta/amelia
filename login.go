@@ -17,7 +17,7 @@ type User struct {
 	PhoneEntries        []PhoneEntry `datastore:"-"`
 }
 
-func login(w http.ResponseWriter, r *http.Request) {
+func login(w http.ResponseWriter, r *http.Request) *appError {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
 	if u == nil {
@@ -25,11 +25,11 @@ func login(w http.ResponseWriter, r *http.Request) {
 		url, err := user.LoginURL(c, r.URL.String())
 		if err != nil {
 			http.Redirect(w, r, "/", http.StatusUnauthorized)
-			return
+			return nil
 		}
 		w.Header().Set("Location", url)
 		w.WriteHeader(http.StatusSeeOther)
-		return
+		return nil
 	}
 	// if this user isn't in database, add it
 	var user User
@@ -37,25 +37,27 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if err == datastore.ErrNoSuchEntity {
 		_, err = datastore.Put(c, datastore.NewKey(c, "User", u.ID, 0, nil), &User{})
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return &appError{err, "Error creating user", http.StatusInternalServerError}
 		}
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	return nil
 }
 
-func logout(w http.ResponseWriter, r *http.Request) {
+func logout(w http.ResponseWriter, r *http.Request) *appError {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
 	if u != nil {
 		url, err := user.LogoutURL(c, "/")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return &appError{err, "Error logging out", http.StatusInternalServerError}
 		}
 		w.Header().Set("Location", url)
 		w.WriteHeader(http.StatusSeeOther)
-		return
+		return nil
 	}
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	return nil
 }

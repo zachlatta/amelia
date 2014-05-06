@@ -18,12 +18,11 @@ var templates = template.Must(template.ParseFiles(
 	tD+"profile.html",
 ))
 
-func root(w http.ResponseWriter, r *http.Request) {
+func root(w http.ResponseWriter, r *http.Request) *appError {
 	c := appengine.NewContext(r)
 	u := user.Current(c)
 	if u == nil {
-		renderTemplate(w, "landing", nil)
-		return
+		return renderTemplate(w, "landing", nil)
 	}
 
 	user := User{
@@ -34,21 +33,21 @@ func root(w http.ResponseWriter, r *http.Request) {
 
 	err := datastore.Get(c, userKey, &user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return &appError{err, "User not found", http.StatusNotFound}
 	}
 
 	_, err = datastore.NewQuery("PhoneEntry").Ancestor(userKey).GetAll(c, &user.PhoneEntries)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return &appError{err, "Error retrieving phones", http.StatusInternalServerError}
 	}
-	renderTemplate(w, "profile", user)
+	return renderTemplate(w, "profile", user)
 }
 
-func renderTemplate(w http.ResponseWriter, tmpl string, c interface{}) {
+func renderTemplate(w http.ResponseWriter, tmpl string,
+	c interface{}) *appError {
 	err := templates.ExecuteTemplate(w, tmpl+".html", c)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return &appError{err, "Can't display webpage", http.StatusInternalServerError}
 	}
+	return nil
 }

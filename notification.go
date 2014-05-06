@@ -21,7 +21,7 @@ type Notification struct {
 
 type StorylineUpdate struct {
 	// TODO: Change to equivalent of enum
-	Reason          string `json:"reason"`
+	Reason string `json:"reason"`
 }
 
 type Location struct {
@@ -34,32 +34,26 @@ type Place struct {
 }
 
 type Segment struct {
-	Place      Place  `json:"place"`
+	Place Place `json:"place"`
 }
 
 type DailySegments struct {
 	Segments []Segment `json:"segments"`
 }
 
-func handleNotification(w http.ResponseWriter, r *http.Request) {
+func handleNotification(w http.ResponseWriter, r *http.Request) *appError {
 	c := appengine.NewContext(r)
 
-	if r.Method != "POST" {
-		http.Error(w, "Invalid method.", http.StatusMethodNotAllowed)
-		return
-	}
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Error reading request body.", http.StatusBadRequest)
-		return
+		return &appError{err, "Error reading request body", http.StatusBadRequest}
 	}
 
 	var notification Notification
 	err = json.Unmarshal(body, &notification)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return &appError{err, "Error unmarshalling JSON", http.StatusBadRequest}
 	}
 
 	hasDataUpload := false
@@ -71,18 +65,18 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hasDataUpload {
+		// TODO: Ensure MovesUserId is unique in datastore
 		q := datastore.NewQuery("User").Filter("AuthorizedWithMoves =", true).Filter("MovesUserId =", notification.UserID)
 
 		var users []User
 		keys, err := q.GetAll(c, &users)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return &appError{err, "Could not get user from datastore",
+				http.StatusInternalServerError}
 		}
 
 		if len(users) <= 0 {
-			http.Error(w, "User not found.", http.StatusNotFound)
-			return
+			return &appError{err, "User not found", http.StatusNotFound}
 		}
 
 		user, key := users[0], keys[0]
@@ -91,23 +85,25 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
 
 		dailySegmentsList, err := GetLatestPlaces(t)
 		if err != nil {
-			c.Errorf(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return &appError{err, "Could not unmarshal request",
+				http.StatusBadRequest}
 		}
 
-		updateDailySegments(*dailySegmentsList, user, key, w, r)
+		return updateDailySegments(c, *dailySegmentsList, user, key)
 	}
+
+	return nil
 }
 
-func updateDailySegments(dailySegmentsList []DailySegments, user User, userKey *datastore.Key, w http.ResponseWriter, r *http.Request) {
-	c := appengine.NewContext(r)
+func updateDailySegments(c appengine.Context,
+	dailySegmentsList []DailySegments, user User,
+	userKey *datastore.Key) *appError {
 	f := urlfetch.Client(c)
 	var phoneEntries []PhoneEntry
 	_, err := datastore.NewQuery("PhoneEntry").Ancestor(userKey).GetAll(c, &phoneEntries)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return &appError{err, "Error getting phones from datastore",
+			http.StatusInternalServerError}
 	}
 	for _, dailySegments := range dailySegmentsList {
 		for _, segment := range dailySegments.Segments {
@@ -115,7 +111,8 @@ func updateDailySegments(dailySegmentsList []DailySegments, user User, userKey *
 			client := tomtom.NewClient(tomtomKey, f)
 			codes, err := client.Geocode.ReverseGeocode(segment.Place.Location.Lat, segment.Place.Location.Lon)
 			if err != nil {
-				c.Errorf(err.Error())
+				return &appError{err, "Error reverse geocoding address",
+					http.StatusInternalServerError}
 			}
 
 			// get address string and check if it changed
@@ -123,28 +120,31 @@ func updateDailySegments(dailySegmentsList []DailySegments, user User, userKey *
 			if err == nil && len(codes) > 0 {
 				address = codes[0].FormattedAddress
 			} else {
-				address = fmt.Sprintf("%f, %f", segment.Place.Location.Lat, segment.Place.Location.Lon)
+				address = fmt.Sprintf("%f, %f", segment.Place.Location.Lat,
+					segment.Place.Location.Lon)
 			}
 			if address == user.LastAddress {
-				return
+				return nil
 			}
 			user.LastAddress = address
 			_, err = datastore.Put(c, userKey, &user)
 			if err != nil {
-				c.Errorf(err.Error())
+				return &appError{err, "Error saving user",
+					http.StatusInternalServerError}
 			}
 
 			// send texts
 			for _, phone := range phoneEntries {
-				sendText("I'm now at " + address + ".", phone.Phone, w, r)
+				return sendText(c, "I'm now at "+address+".", phone.Phone)
 			}
-			return // first item in slice is latest one
+			return nil // first item in slice is latest one
 		}
 	}
+
+	return nil
 }
 
-func sendText(message string, phone string, w http.ResponseWriter, r *http.Request) {
-	a := appengine.NewContext(r)
+func sendText(a appengine.Context, message string, phone string) *appError {
 	f := urlfetch.Client(a)
 	c := twilio.NewClient(twilioSid, twilioAuthToken, f)
 
@@ -152,6 +152,9 @@ func sendText(message string, phone string, w http.ResponseWriter, r *http.Reque
 	params.Body = message
 	_, _, err := c.Messages.Send(twilioPhone, phone, params)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		return &appError{err, "Error sending text message",
+			http.StatusInternalServerError}
 	}
+
+	return nil
 }
