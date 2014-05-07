@@ -1,10 +1,10 @@
 # Amelia ![Analytics](https://ga-beacon.appspot.com/UA-34529482-6/postman/readme?pixel)
 
-Amelia keeps track of your children when you aren't. Amelia sends you a text
-message every time your child changes location with their new address.
+Amelia send a text message to your parents with your current address every time
+you change location.
 
 Amelia was created during the [Burbank Game+Hack](http://burbankgamehack.com/)
-and won second place.
+and won second place. It also won the Mashery API prize.
 
 ## Getting Started
 
