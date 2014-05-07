@@ -6,7 +6,7 @@ you change location.
 Amelia was created during the [Burbank Game+Hack](http://burbankgamehack.com/)
 and won second place. It also won the Mashery API prize.
 
-## How To Use
+#### How To Use
 
 1. Sign up for Amelia on http://getamelia.com.
 2. Connect Amelia with [Moves](http://moves-app.com/) on your phone.
