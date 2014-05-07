@@ -6,6 +6,14 @@ you change location.
 Amelia was created during the [Burbank Game+Hack](http://burbankgamehack.com/)
 and won second place. It also won the Mashery API prize.
 
+## How To Use
+
+1. Sign up for Amelia on http://getamelia.com.
+2. Connect Amelia with [Moves](http://moves-app.com/) on your phone.
+3. Add parent phone numbers to your account.
+4. All of the registered parents will be texted your current address every time
+   you change location.
+
 ## Getting Started
 
 Amelia runs on Google App Engine. You must set up the App Engine Go SDK as
