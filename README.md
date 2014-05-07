@@ -4,7 +4,7 @@ Amelia send a text message to your parents with your current address every time
 you change location.
 
 Amelia was created during the [Burbank Game+Hack](http://burbankgamehack.com/)
-and won second place. It also won the Mashery API prize.
+and won second place in the open challenge. It also won the Mashery API prize.
 
 #### How To Use
 
