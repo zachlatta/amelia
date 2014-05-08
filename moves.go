@@ -3,6 +3,7 @@ package amelia
 import (
 	"encoding/json"
 	"io/ioutil"
+	"time"
 
 	"code.google.com/p/goauth2/oauth"
 
@@ -21,6 +22,19 @@ var oauthCfg = &oauth.Config{
 	TokenURL:     "https://api.moves-app.com/oauth/v1/access_token",
 	RedirectURL:  "http://localhost:8080/oauth2callback",
 	Scope:        "location",
+}
+
+type RFC3339Time struct {
+	time.Time
+}
+
+func (t *RFC3339Time) UnmarshalJSON(b []byte) (err error) {
+	t.Time, err = time.Parse(time.RFC3339, string(b))
+	return err
+}
+
+func (t *RFC3339Time) MarshalJSON() ([]byte, error) {
+	return []byte(t.Format(`"` + time.RFC3339 + `"`)), nil
 }
 
 func CreateTransport(c appengine.Context, token *oauth.Token) *oauth.Transport {
