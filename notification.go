@@ -31,6 +31,7 @@ type Location struct {
 
 type Place struct {
 	Location Location `json:"location"`
+	Name     string   `json:"name"`
 }
 
 type Segment struct {
@@ -123,21 +124,25 @@ func updateDailySegments(c appengine.Context,
 		return nil
 	}
 
-	for _, segment := range segmentsToProcess {
-		client := tomtom.NewClient(tomtomKey, f)
-		codes, err := client.Geocode.ReverseGeocode(segment.Place.Location.Lat, segment.Place.Location.Lon)
-		if err != nil {
-			return &appError{err, "Error reverse geocoding address",
-				http.StatusInternalServerError}
-		}
+	client := tomtom.NewClient(tomtomKey, f)
 
-		// get address string and check if it changed
+	for _, segment := range segmentsToProcess {
 		var address string
-		if len(codes) > 0 {
-			address = codes[0].FormattedAddress
+		if segment.Place.Name != "" {
+			address = segment.Place.Name
 		} else {
-			address = fmt.Sprintf("%f, %f", segment.Place.Location.Lat,
-				segment.Place.Location.Lon)
+			codes, err := client.Geocode.ReverseGeocode(segment.Place.Location.Lat, segment.Place.Location.Lon)
+			if err != nil {
+				return &appError{err, "Error reverse geocoding address",
+					http.StatusInternalServerError}
+			}
+
+			if len(codes) > 0 {
+				address = codes[0].FormattedAddress
+			} else {
+				address = fmt.Sprintf("%f, %f", segment.Place.Location.Lat,
+					segment.Place.Location.Lon)
+			}
 		}
 
 		// send texts
