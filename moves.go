@@ -3,6 +3,7 @@ package amelia
 import (
 	"encoding/json"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"code.google.com/p/goauth2/oauth"
@@ -29,7 +30,7 @@ type RFC3339Time struct {
 }
 
 func (t *RFC3339Time) UnmarshalJSON(b []byte) (err error) {
-	t.Time, err = time.Parse(time.RFC3339, string(b))
+	t.Time, err = time.Parse("20060102T150405-0700", strings.Trim(string(b), `"`))
 	return err
 }
 
@@ -75,7 +76,7 @@ func GetUserProfile(t *oauth.Transport) (*UserProfile, error) {
 }
 
 func GetLatestPlaces(t *oauth.Transport) (*[]DailySegments, error) {
-	resp, err := t.Client().Get(baseURL + "/user/places/daily?pastDays=1")
+	resp, err := t.Client().Get(baseURL + "/user/places/daily?pastDays=5")
 	if err != nil {
 		return nil, err
 	}

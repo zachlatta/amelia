@@ -9,12 +9,13 @@ import (
 )
 
 type User struct {
-	AuthorizedWithMoves bool
-	MovesToken          MonkeyToken
-	MovesUserId         int64
-	LastAddress         string
-	Name                string       `datastore:"-"`
-	PhoneEntries        []PhoneEntry `datastore:"-"`
+	AuthorizedWithMoves  bool
+	MovesToken           MonkeyToken
+	MovesUserId          int64
+	LastAddress          string
+	LastSegmentStartTime RFC3339Time
+	Name                 string       `datastore:"-"`
+	PhoneEntries         []PhoneEntry `datastore:"-"`
 }
 
 func login(w http.ResponseWriter, r *http.Request) *appError {

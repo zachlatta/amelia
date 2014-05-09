@@ -34,7 +34,8 @@ type Place struct {
 }
 
 type Segment struct {
-	Place Place `json:"place"`
+	Place     Place       `json:"place"`
+	StartTime RFC3339Time `json:"startTime"`
 }
 
 type DailySegments struct {
@@ -105,40 +106,55 @@ func updateDailySegments(c appengine.Context,
 		return &appError{err, "Error getting phones from datastore",
 			http.StatusInternalServerError}
 	}
+
+	segmentsToProcess := make([]Segment, 0)
+
+	// Find segments with StartTimes greater than the user's LastSegmentStartTime
 	for _, dailySegments := range dailySegmentsList {
 		for _, segment := range dailySegments.Segments {
-			// use reverse geocoding to find address
-			client := tomtom.NewClient(tomtomKey, f)
-			codes, err := client.Geocode.ReverseGeocode(segment.Place.Location.Lat, segment.Place.Location.Lon)
-			if err != nil {
-				return &appError{err, "Error reverse geocoding address",
-					http.StatusInternalServerError}
+			if user.LastSegmentStartTime.Time.Before(segment.StartTime.Time) {
+				segmentsToProcess = append(segmentsToProcess, segment)
 			}
-
-			// get address string and check if it changed
-			var address string
-			if err == nil && len(codes) > 0 {
-				address = codes[0].FormattedAddress
-			} else {
-				address = fmt.Sprintf("%f, %f", segment.Place.Location.Lat,
-					segment.Place.Location.Lon)
-			}
-			if address == user.LastAddress {
-				return nil
-			}
-			user.LastAddress = address
-			_, err = datastore.Put(c, userKey, &user)
-			if err != nil {
-				return &appError{err, "Error saving user",
-					http.StatusInternalServerError}
-			}
-
-			// send texts
-			for _, phone := range phoneEntries {
-				return sendText(c, "I'm now at "+address+".", phone.Phone)
-			}
-			return nil // first item in slice is latest one
 		}
+	}
+
+	// If there aren't any, return
+	if len(segmentsToProcess) <= 0 {
+		return nil
+	}
+
+	for _, segment := range segmentsToProcess {
+		client := tomtom.NewClient(tomtomKey, f)
+		codes, err := client.Geocode.ReverseGeocode(segment.Place.Location.Lat, segment.Place.Location.Lon)
+		if err != nil {
+			return &appError{err, "Error reverse geocoding address",
+				http.StatusInternalServerError}
+		}
+
+		// get address string and check if it changed
+		var address string
+		if len(codes) > 0 {
+			address = codes[0].FormattedAddress
+		} else {
+			address = fmt.Sprintf("%f, %f", segment.Place.Location.Lat,
+				segment.Place.Location.Lon)
+		}
+
+		// send texts
+		for _, phone := range phoneEntries {
+			appError := sendText(c, "I'm now at "+address+".", phone.Phone)
+			if err != nil {
+				return appError
+			}
+		}
+	}
+
+	lastSegment := segmentsToProcess[len(segmentsToProcess)-1]
+	user.LastSegmentStartTime = lastSegment.StartTime
+
+	_, err = datastore.Put(c, userKey, &user)
+	if err != nil {
+		return &appError{err, "Error saving user", http.StatusInternalServerError}
 	}
 
 	return nil
